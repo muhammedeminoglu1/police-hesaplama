@@ -25,18 +25,57 @@ function KkegContent() {
   }, [start, end, total]);
 
   const excelIndir = () => {
-    const ws = XLSX.utils.json_to_sheet(sonuclar.map((s) => ({
-      "Dönem": s.ay,
-      "Prim Tutarı (TL)": s.taksitTutar.toFixed(2),
-      "KKEG (30%) (TL)": s.kkeg.toFixed(2)
-    })));
+    const wsKkeg = XLSX.utils.json_to_sheet(
+      sonuclar.map((s) => ({
+        "Dönem": s.ay,
+        "Prim Tutarı (TL)": s.taksitTutar,
+        "KKEG (30%) (TL)": s.kkeg,
+      }))
+    );
+
+    // Toplam satırı
+    const toplamPrim = sonuclar.reduce((sum, s) => sum + s.taksitTutar, 0);
+    const toplamKkeg = sonuclar.reduce((sum, s) => sum + s.kkeg, 0);
+
+    XLSX.utils.sheet_add_json(
+      wsKkeg,
+      [
+        {
+          "Dönem": "TOPLAM",
+          "Prim Tutarı (TL)": toplamPrim,
+          "KKEG (30%) (TL)": toplamKkeg,
+        },
+      ],
+      { skipHeader: true, origin: -1 }
+    );
+
+    // Sayısal hücre biçimini Excel'e uygula
+    const range = XLSX.utils.decode_range(wsKkeg["!ref"]!);
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      for (let C = 1; C <= 2; ++C) {
+        const cell_address = { c: C, r: R };
+        const cell_ref = XLSX.utils.encode_cell(cell_address);
+        const cell = wsKkeg[cell_ref];
+        if (cell && typeof cell.v === "number") {
+          cell.t = "n";
+          cell.z = "#,##0.00";
+        }
+      }
+    }
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "KKEG Detayları");
+    XLSX.utils.book_append_sheet(wb, wsKkeg, "KKEG Detayları");
     XLSX.writeFile(wb, "kkeg-detaylari.xlsx");
   };
 
+  const formatTL = (deger: number) =>
+    deger.toLocaleString("tr-TR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
   return (
-    <main className="p-8 min-h-screen bg-gradient-to-b from-blue-100 to-white">
+    <main className="p-8 min-h-screen bg-gradient-to-b from-blue-100 to-white font-sans">
       <h1 className="text-3xl font-bold mb-8 text-center">KKEG Hesaplama Detayları</h1>
 
       <div className="overflow-x-auto">
@@ -52,10 +91,19 @@ function KkegContent() {
             {sonuclar.map((item, idx) => (
               <tr key={idx}>
                 <td className="border p-2">{item.ay}</td>
-                <td className="border p-2 text-right">{item.taksitTutar.toFixed(2)} TL</td>
-                <td className="border p-2 text-right">{item.kkeg.toFixed(2)} TL</td>
+                <td className="border p-2 text-right">{formatTL(item.taksitTutar)} TL</td>
+                <td className="border p-2 text-right">{formatTL(item.kkeg)} TL</td>
               </tr>
             ))}
+            <tr className="bg-gray-100 font-semibold">
+              <td className="border p-2">TOPLAM</td>
+              <td className="border p-2 text-right">
+                {formatTL(sonuclar.reduce((acc, s) => acc + s.taksitTutar, 0))} TL
+              </td>
+              <td className="border p-2 text-right">
+                {formatTL(sonuclar.reduce((acc, s) => acc + s.kkeg, 0))} TL
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

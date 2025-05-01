@@ -62,3 +62,10 @@ export function hesaplaKapsam(startDateStr: string, endDateStr: string, toplamTu
 
   return aylar;
 }
+
+export function formatTurkishNumber(num: number): string {
+  return num.toLocaleString("tr-TR", {
+    minimumFractionDigits: num % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
