@@ -32,6 +32,9 @@ function SonucContent() {
   }, [start, end, total]);
 
   const excelIndir = () => {
+    const toplamGun = sonuclar.reduce((sum, s) => sum + s.kapsananGun, 0);
+    const toplamPrim = sonuclar.reduce((sum, s) => sum + s.taksitTutar, 0);
+
     const wsSonuclar = XLSX.utils.json_to_sheet([
       ...sonuclar.map((s, idx) => ({
         "Dönem": s.ay,
@@ -41,17 +44,15 @@ function SonucContent() {
           (idx + 1) % 3 === 0
             ? formatTurkishNumber(
                 sonuclar[idx - 2].taksitTutar +
-                  sonuclar[idx - 1].taksitTutar +
-                  s.taksitTutar
+                sonuclar[idx - 1].taksitTutar +
+                s.taksitTutar
               )
             : "",
       })),
       {
         "Dönem": "TOPLAM",
-        "Gün Sayısı": 0,
-        "Prim Tutarı (TL)": formatTurkishNumber(
-          sonuclar.reduce((sum, s) => sum + s.taksitTutar, 0)
-        ),
+        "Gün Sayısı": toplamGun,
+        "Prim Tutarı (TL)": formatTurkishNumber(toplamPrim),
         "3 Aylık Toplam (TL)": ""
       }
     ]);
@@ -67,7 +68,7 @@ function SonucContent() {
 
   return (
     <main className="p-8 min-h-screen bg-gradient-to-b from-blue-100 to-white font-sans">
-     <h1 className="text-3xl font-bold mb-8 text-center">Hesaplama Sonuçları</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">Hesaplama Sonuçları</h1>
 
       <div className="flex justify-end mb-4 gap-4">
         <button
@@ -114,8 +115,8 @@ function SonucContent() {
                   {(idx + 1) % 3 === 0
                     ? `${formatTurkishNumber(
                         sonuclar[idx - 2].taksitTutar +
-                          sonuclar[idx - 1].taksitTutar +
-                          item.taksitTutar
+                        sonuclar[idx - 1].taksitTutar +
+                        item.taksitTutar
                       )} TL`
                     : "-"}
                 </td>
@@ -124,7 +125,9 @@ function SonucContent() {
             <tr className="font-semibold bg-gray-100">
               <td className="border p-2">TOPLAM</td>
               <td className="border p-2"></td>
-              <td className="border p-2 text-center">0</td>
+              <td className="border p-2 text-center">
+                {sonuclar.reduce((sum, s) => sum + s.kapsananGun, 0)}
+              </td>
               <td className="border p-2 text-right">
                 {formatTurkishNumber(sonuclar.reduce((a, b) => a + b.taksitTutar, 0))} TL
               </td>
@@ -151,3 +154,4 @@ export default function SonucPage() {
     </div>
   );
 }
+
